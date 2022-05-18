@@ -1,0 +1,9 @@
+# ignore all logs
+*.log
+*.csv
+*.txt
+*.backup
+*.bck
+*.bak
+
+
