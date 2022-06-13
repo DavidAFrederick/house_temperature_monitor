@@ -6,6 +6,8 @@ import csv
 
 
 # https://pimylifeup.com/raspberry-pi-humidity-sensor-dht22/
+# sudo pip3 install --install-option="--force-pi" Adafruit_DHT
+
 import Adafruit_DHT
 
 import time
@@ -72,7 +74,7 @@ def create_web_page (date_time_string, ac_temp_input, ac_temp_output, ac_temp_de
               ac_run_time_whole_day, humidity, water_heater_temp, rpi_zero_w_1_humidity, rpi_zero_w_1_temperature):
 
     page_text = [
-    '<h1 style="text-align: left;color:rgb(255, 1, 1); "><strong>System Temperatures</strong></h1> \n',
+    '<h1 style="text-align: left;color:rgb(255, 1, 1); "><strong>System Temperatures (Ver: June 13, 2022)</strong></h1> \n',
     '<table style="height: 14px; width: 400px; border-collapse: collapse; float: left;" border="0"> \n',
     '<tbody> \n',
     '<tr style="height: 18px;"> \n',
@@ -178,7 +180,7 @@ while True:
     ac_temp_input               =  str( read_temp(device_file[3]) )
     ac_temp_output              =  str( read_temp(device_file[1]) )
     ac_temp_delta               =  str(int( read_temp(device_file[3]) - read_temp(device_file[1])) )
-    ac_temp_delta_float         =  float (ac_temp_delta)
+    ac_temp_delta_float         =  abs(float(ac_temp_delta))     ###  Added abs
     ac_run_time_current         =  ac_run_time_current
     ac_run_time_whole_day       =  str( ac_run_time_whole_day_float )
     rpi_zero_w_1_temperature_str = str(rpi_zero_w_1_temperature)
@@ -187,7 +189,8 @@ while True:
     humidity                    =  str(humidity)
     water_heater_temp           =  str(read_temp(device_file[2]))
 
-    if ac_temp_delta_float > 20:
+                                                                     ####  Add code to differentiate heating and cooling
+    if ac_temp_delta_float > 14:                                     ####   Changed this from 20 to 14
         ac_run_time_current = ac_run_time_current + 1
         ac_run_time_whole_day_float = ac_run_time_whole_day_float + 1
         ac_run_time_whole_day_string = str(ac_run_time_whole_day_float)
@@ -206,7 +209,7 @@ while True:
     previous_hour = current_hour
     current_hour = int(datetime.now().hour)
     
-    if (current_hour == 3 ) and (previous_hour != current_hour):
+    if (current_hour == 5 ) and (previous_hour != current_hour):    #### Restarts counter at 3:00 AM   CHANGED TO 5:00 AM
         string1 = "Day Roll Over "
         file3 = open(debug_file_name3, "a")
         file3.write(date_time_string + "\n")
@@ -225,4 +228,5 @@ while True:
               rpi_zero_w_1_humidity_str, rpi_zero_w_1_temperature_str)
 
 #    print (currenttime)
-    time.sleep(59)
+    time.sleep(51)        #### Reduce by 8 seconds since not running often enough  ## CHANGED FROM 59 to 51
+
