@@ -1,3 +1,6 @@
+#  Updated June 13, 2022 - 
+#  Remote update on March 1, 2025
+# Test March 2
 import os
 import glob
 import time
@@ -161,6 +164,10 @@ while True:
  #   print (currenttime)
 
     humidity, temperature = Adafruit_DHT.read_retry(DHT_SENSOR, DHT_PIN)
+    print("Humidity: ", humidity, "  Temperature: ", temperature)
+
+    humidity = 99
+    temperature = 88
     humidity = int(humidity)
     temperature  = int(temperature)
     
