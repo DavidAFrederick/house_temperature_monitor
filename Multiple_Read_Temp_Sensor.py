@@ -1,11 +1,13 @@
 #  Updated June 13, 2022 - 
-#  Remote update on March 1, 2025
+#  Remote update on March 4, 2025
 # Test March 2
 import os
 import glob
 import time
 from datetime import datetime
 import csv
+
+#  sudo systemctl restart temperatureMonitor
 
 
 # https://pimylifeup.com/raspberry-pi-humidity-sensor-dht22/
@@ -72,12 +74,19 @@ def write_header_line():
     open(output_filename).close()
 
 
+# tbody   = table body
+#  td     = table cell
+#  tr     = table row
+#  nbsp   = Non-breaking space
+
+
+
 
 def create_web_page (date_time_string, ac_temp_input, ac_temp_output, ac_temp_delta, ac_run_time_current,
               ac_run_time_whole_day, humidity, water_heater_temp, rpi_zero_w_1_humidity, rpi_zero_w_1_temperature):
 
     page_text = [
-    '<h1 style="text-align: left;color:rgb(255, 1, 1); "><strong>System Temperatures (Ver: June 13, 2022)</strong></h1> \n',
+    '<h1 style="text-align: left;color:rgb(255, 1, 1); "><strong>System Temperatures (Ver: March 3a, 2025)</strong></h1> \n',
     '<table style="height: 14px; width: 400px; border-collapse: collapse; float: left;" border="0"> \n',
     '<tbody> \n',
     '<tr style="height: 18px;"> \n',
@@ -123,6 +132,7 @@ def create_web_page (date_time_string, ac_temp_input, ac_temp_output, ac_temp_de
     '<p>&nbsp;</p> \n',
     '<p style="color:rgb(200, 1, 1);"><strong>RPI_1: Humidity:&nbsp;</strong>',rpi_zero_w_1_humidity,'</p> \n',
     '<p style="color:rgb(200, 1, 1);"><strong>RPI_1: Temperature </strong>&nbsp;', rpi_zero_w_1_temperature,'</p> \n'
+    '<img src="temperature_graph.jpg">'
     ]
     
     output_filename = '/var/www/html/index.html'
@@ -133,11 +143,11 @@ def create_web_page (date_time_string, ac_temp_input, ac_temp_output, ac_temp_de
             
 #===================================================================================
 
+# =(End of Functions)===========================================================
 
 # ======================================================================
 DHT_SENSOR = Adafruit_DHT.DHT22
 DHT_PIN = 24
-
 
 # name the CSV file for the data log
 #output_filename = '/home/pi/python/BasementTemperatureData.csv'
@@ -236,4 +246,20 @@ while True:
 
 #    print (currenttime)
     time.sleep(51)        #### Reduce by 8 seconds since not running often enough  ## CHANGED FROM 59 to 51
+
+
+
+# import matplotlib.pyplot as plt
+# import numpy as np
+
+# x = np.loadtxt('testdata2.cvs') #for comma separated values
+
+# plt.plot(x, label='Data from file')
+# plt.xlabel('X-axis label')
+# plt.title('Plot of data from file')
+# plt.legend()
+# # plt.show()
+
+# plt.savefig('sine_wave.png', dpi=300, bbox_inches='tight')
+# plt.close()
 
