@@ -1,6 +1,21 @@
 #  Updated June 13, 2022 - 
 #  Remote update on March 4, 2025
 # Test March 2
+# =========================
+# Wiring Notes:
+# Sensors consist of 4 single-wire thermometers and 1 DHT sensor
+# The 4 single wire sensors have the wires parallelled.
+# Power = +3.3V on pin 1
+# Ground = on pin 6
+# Signal (Yellow wire) on pin 7
+#
+# DHT 
+# Power (3.3V) on pin 17
+# Signal on pin 18 GPIO pin 24
+# Ground on pin 20
+
+
+
 import os
 import glob
 import time
@@ -176,8 +191,8 @@ while True:
     humidity, temperature = Adafruit_DHT.read_retry(DHT_SENSOR, DHT_PIN)
     print("Humidity: ", humidity, "  Temperature: ", temperature)
 
-    humidity = 99
-    temperature = 88
+    # humidity = 99
+    # temperature = 88
     humidity = int(humidity)
     temperature  = int(temperature)
     
