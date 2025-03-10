@@ -13,6 +13,9 @@ import Adafruit_DHT
 from networktables import NetworkTables
 import logging  # To see messages from networktables, you must setup logging
 
+# Graphing
+import matplotlib.pyplot as plt
+import numpy as np
 
 #=====================================================
 #==(Initialize CONSTANTS)=============================
@@ -39,11 +42,13 @@ global DTH_temperature
 DTH_humidity = 0
 DTH_temperature = 0
 
-daily_ac_total_time_running = 0
+# daily_ac_total_time_running = 0
 ac_run_time_current = 0
+ac_run_time_current_string = "x"
 current_hour = 0
 ac_run_time_whole_day_float = 0
-ac_run_time_whole_day_string = "0"
+ac_run_time_whole_day_string = "x"
+
 output_filename = '/home/pi/python/BasementTemperatureData2.csv'
 debug_file_name2 = "/home/pi/python/debug22.txt"
 debug_file_name3 = "/home/pi/python/debug32.txt"
@@ -53,6 +58,21 @@ rpi_zero_w_1_temperature = 0
 rpi_zero_w_1_humidity =    0
 date_time_string = " "
 currenttime = datetime.now().replace(microsecond=0)
+
+# Graphing
+initial_value = 55
+number_of_elements = 60
+hourly_data_list = [initial_value] * number_of_elements
+
+# hourly_data_list = [ 50, 52, 54, 56, 58, 60, 64, 68, 72, 80,
+#                      80, 75, 70, 70, 70, 72, 74, 80, 85, 85, 
+#                      89, 90, 90, 90, 90, 85, 85, 83, 83, 82,
+#                      80, 74, 70, 70, 72, 76, 78, 80, 80, 80, 
+#                      80, 81, 82, 83, 84, 85, 86, 87, 88, 89,
+#                      90, 95, 90, 85, 80, 75, 70, 65, 60, 55] 
+
+
+hourly_data_array_np = np.array(hourly_data_list)
 
 #=====================================================
 #==(Initialize NetworkTables )========================
@@ -114,7 +134,7 @@ def Read_the_DTH_sensor_temperature() -> int:
         DTH_temperature = 0
 
     DTH_humidity = int(DTH_humidity)
-    DTH_temperature  = int(DTH_temperature)
+    DTH_temperature  = int(DTH_temperature * (9/5) +32)
     return DTH_temperature
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -130,7 +150,7 @@ def Read_the_DTH_sensor_humidity() -> int:
         DTH_temperature = 0
 
     DTH_humidity = int(DTH_humidity)
-    DTH_temperature  = int(DTH_temperature)
+    DTH_temperature  = int(DTH_temperature * (9/5) +32)
     return DTH_humidity
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -175,7 +195,7 @@ def create_web_page (date_time_string, ac_temp_input, ac_temp_output, ac_temp_de
               ac_run_time_whole_day, humidity, water_heater_temp, rpi_zero_w_1_humidity, rpi_zero_w_1_temperature):
         
     page_text = [
-    '<h1 style="text-align: left;color:rgb(255, 1, 1); "><strong>System Temperatures (Ver: March 10, 2025)</strong></h1> \n',
+    '<h1 style="text-align: left;color:rgb(255, 1, 1); "><strong>System Temperatures (Ver: March 10a, 2025)</strong></h1> \n',
     '<table style="height: 14px; width: 400px; border-collapse: collapse; float: left;" border="0"> \n',
     '<tbody> \n',
     '<tr style="height: 18px;"> \n',
@@ -235,7 +255,7 @@ def create_web_page (date_time_string, ac_temp_input, ac_temp_output, ac_temp_de
     '<p>&nbsp;</p> \n',
     '<p style="color:rgb(200, 1, 1);"><strong>RPI_1: Humidity:&nbsp;</strong>',rpi_zero_w_1_humidity,'</p> \n',
     '<p style="color:rgb(200, 1, 1);"><strong>RPI_1: Temperature </strong>&nbsp;', rpi_zero_w_1_temperature,'</p> \n'
-    '<img src="temperature_graph.jpg">'
+    '<img src="temperature_graph.png">'
     ]
     
     with open(web_server_page_filename, 'w') as f:
@@ -259,10 +279,10 @@ def print_sensors():
 def get_and_print_current_time():
     # Get current time
     global date_time_string
+    global currenttime
     currenttime = datetime.now().replace(microsecond=0)
     date_time_string = str(currenttime)
     print ("Current Time: ", currenttime)
-    print ("date_time_string: ", date_time_string)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - 
     # Read the remote sensor
@@ -271,6 +291,39 @@ def  read_remote_sensors():
     rpi_zero_w_1_humidity =    float ( sd.getString ("rpi_zero_w_1_humidity", "0" ) )
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - 
+def save_HVAC_input_into_array(current_input_temperature):
+
+    current_minute = int(datetime.now().minute)
+
+    hourly_data_array_np[current_minute] = current_input_temperature
+
+    plt.plot(hourly_data_array_np, label='Hourly Temperature Data Label')
+    plt.xlabel('Time - Minutes')
+    plt.title('Hourly Temperature Data Title')
+    plt.legend()
+    plt.ylim((60,85))
+
+    plt.savefig('/var/www/html/temperature_graph.png', dpi=100, bbox_inches='tight')
+    plt.close()
+
+
+"""
+How to create the  Hourly graph
+
+Create global list of 60 members
+Create position indicator
+Preload the list of a value of 55
+
+On each loop, 
+Read the current minute and use this as the position indicator
+Place the current reading into the list
+
+Create a graph using the current array
+Write the graph into the website folder
+
+
+
+"""
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -285,7 +338,9 @@ def  read_remote_sensors():
 get_and_print_current_time()
 Initialize_the_one_wire_temperature_sensors()
 print_sensors()
+write_header_line()
 
+TEMP_loop_counter = 0
 
 time_to_collect_data = True    # Used to trigger collecting new data each minute
 start_new_day =  True
@@ -309,27 +364,30 @@ while (time_to_collect_data):
     rpi_zero_w_1_temperature_str    =  str(rpi_zero_w_1_temperature)
     rpi_zero_w_1_humidity_str       =  str(rpi_zero_w_1_humidity)
 
+    save_HVAC_input_into_array(get_HVAC_input())
 
     # Files in use
     #  1)  All data files
     #  2)  Last 
 
-
     # All Data file
     # Last 24 hours 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
                                                                          ####  Add code to differentiate heating and cooling
     if ac_temp_delta_float > 14:                                     ####   Changed this from 20 to 14
         ac_run_time_current = ac_run_time_current + 1
         ac_run_time_whole_day_float = ac_run_time_whole_day_float + 1
+
         ac_run_time_whole_day_string = str(ac_run_time_whole_day_float)
         ac_run_time_current_string = str(ac_run_time_current)
-        string1 = "AC is running: current: "  + ac_run_time_current_string + "\n"
-        string2 = "AC is running: day: "      + ac_run_time_whole_day_string + "\n"
+
+        string1 = "   AC is running: current: "  + ac_run_time_current_string + "\n"
+        string2 = "   AC is running: day: "      + ac_run_time_whole_day_string + "\n"
         file1 = open(debug_file_name2, "a")
-        file1.write(date_time_string + "\n")
-        file1.write(string1)
-        file1.write(string2)
+        file1.write(date_time_string + string1  + string2 +  "\n")
+        # file1.write(string1)
+        # file1.write(string2)
         file1.close()
     else:
         ac_run_time_current = 0
@@ -346,15 +404,10 @@ while (time_to_collect_data):
         ac_run_time_whole_day_float = 0
         file3.close()
 
-        # new day
-    
-    
-#    if datetime.hour():
-#        continue
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 
     # Write data to files
-    write_header_line()
     write_row_of_data_to_CSV()
 
     # Create web page template
@@ -372,8 +425,14 @@ while (time_to_collect_data):
     )
     
 
+
+
     # Check to see if its time to collect data again
-    time_to_collect_data = False
+    time.sleep(10) 
+
+    TEMP_loop_counter = TEMP_loop_counter + 1
+    if (TEMP_loop_counter > 65):
+        time_to_collect_data = False
 
 
 #=====================================================
@@ -392,9 +451,66 @@ while (time_to_collect_data):
 # Signal on pin 18 GPIO pin 24
 # Ground on pin 20
 #=====================================================
-
-
 #  sudo systemctl restart temperatureMonitor
+#  monitor_hvac_system.py
 
+#=====================================================
+
+# Create a service unit file:
+# Open a text editor with root privileges and create a file in /etc/systemd/system/ with a name like your_program.service.
+
+# Add the necessary details within the file, including:
+
+# [Unit]: section: Describes the service, like its name and dependencies.
+# [Service]: section: Specifies the program to run, its execution path, and other options.
+# [Install]: section: Defines when and how the service should be started (usually set to "multi-user.target" for booting with the desktop).
+
+#     [Unit]
+#     Description=My Custom Service
+#     After=network.target
+
+#     [Service]
+#     Type=simple
+
+#     ExecStart=/usr/bin/python3 /home/pi/my_program.py
+
+#     [Install]
+#     WantedBy=multi-user.target
+
+# =================================================================================
+# =================================================================================
+
+# /etc/systemd/system/temperatureMonitor.service
+
+# # systemd unit file for the Python Temperature Service
+# # DFrederick June 22, 2020
+# [Unit]
+# # Human readable name of the unit
+# Description=Python Temperature Service
+
+
+# [Service]
+# # Command to execute when the service is started
+# ExecStart=sudo /usr/bin/python3 /home/pi/python/Multiple_Read_Temp_Sensor.py
+
+# # Disable Python's buffering of STDOUT and STDERR, so that output from the
+# # service shows up immediately in systemd's logs
+# Environment=PYTHONUNBUFFERED=1
+
+# # Automatically restart the service if it crashes
+# Restart=on-failure
+
+# # Our service will notify systemd once it is up and running
+# #Type=notify
+
+# # Use a dedicated user to run our service
+# User=pi
+
+
+# [Install]
+
+# # Tell systemd to automatically start this service when the system boots
+# # (assuming the service is enabled)
+# WantedBy=default.target
 
 #=====================================================
