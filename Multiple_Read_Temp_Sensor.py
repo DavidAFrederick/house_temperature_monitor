@@ -67,7 +67,6 @@ def read_temp_raw(deviceFile):
     f.close()
     return lines
 
-
 def read_temp(deviceFile):
     lines = read_temp_raw(deviceFile)
     while lines[0].strip()[-3:] != 'YES':
@@ -268,6 +267,8 @@ while True:
 # import numpy as np
 
 # x = np.loadtxt('testdata2.cvs') #for comma separated values
+#      https://numpy.org/doc/2.2/reference/generated/numpy.loadtxt.html
+
 
 # plt.plot(x, label='Data from file')
 # plt.xlabel('X-axis label')

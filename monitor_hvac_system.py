@@ -58,9 +58,11 @@ rpi_zero_w_1_temperature = 0
 rpi_zero_w_1_humidity =    0
 date_time_string = " "
 currenttime = datetime.now().replace(microsecond=0)
+current_minute = int(datetime.now().minute)
+previous_minute = current_minute - 2
 
-# Graphing
-initial_value = 55
+# Graphing - One hour of temperature data
+initial_value = 75
 number_of_elements = 60
 hourly_data_list = [initial_value] * number_of_elements
 
@@ -71,8 +73,32 @@ hourly_data_list = [initial_value] * number_of_elements
 #                      80, 81, 82, 83, 84, 85, 86, 87, 88, 89,
 #                      90, 95, 90, 85, 80, 75, 70, 65, 60, 55] 
 
-
 hourly_data_array_np = np.array(hourly_data_list)
+
+# Graphing - 24 hours of temperature data at 15 minute intervals
+initial_value = 70
+number_of_elements = 24 * 4
+daily_data_list = [initial_value] * number_of_elements
+daily_data_array_np = np.array(daily_data_list)
+
+# 0 0    = 0
+# 0 15   = 1
+# 0 30   = 2
+# 0 45   = 3
+# 1 0    = 4   (hr  * 4) +   
+# 1 15   = 5   (hr  * 4) + (min / 15)
+# 1 30   = 6
+# 1 45   = 7
+# 2 0    = 8
+
+# for hr in range(24):
+#     for min in range (60):
+#         quotient, remainder = divmod(min, 15)
+#         if (remainder == 0):
+#             print ("Hr: ", hr, "  min:  ", min,  "  index:  ", 4 * hr + quotient )
+
+
+
 
 #=====================================================
 #==(Initialize NetworkTables )========================
@@ -195,7 +221,7 @@ def create_web_page (date_time_string, ac_temp_input, ac_temp_output, ac_temp_de
               ac_run_time_whole_day, humidity, water_heater_temp, rpi_zero_w_1_humidity, rpi_zero_w_1_temperature):
         
     page_text = [
-    '<h1 style="text-align: left;color:rgb(255, 1, 1); "><strong>System Temperatures (Ver: March 10a, 2025)</strong></h1> \n',
+    '<h1 style="text-align: left;color:rgb(255, 1, 1); "><strong>System Temperatures (Ver: March 11, 2025)</strong></h1> \n',
     '<table style="height: 14px; width: 400px; border-collapse: collapse; float: left;" border="0"> \n',
     '<tbody> \n',
     '<tr style="height: 18px;"> \n',
@@ -256,6 +282,8 @@ def create_web_page (date_time_string, ac_temp_input, ac_temp_output, ac_temp_de
     '<p style="color:rgb(200, 1, 1);"><strong>RPI_1: Humidity:&nbsp;</strong>',rpi_zero_w_1_humidity,'</p> \n',
     '<p style="color:rgb(200, 1, 1);"><strong>RPI_1: Temperature </strong>&nbsp;', rpi_zero_w_1_temperature,'</p> \n'
     '<img src="temperature_graph.png">'
+    '<p>&nbsp;</p>\n'
+    '<img src="daily_temperature_graph.png">'
     ]
     
     with open(web_server_page_filename, 'w') as f:
@@ -297,14 +325,51 @@ def save_HVAC_input_into_array(current_input_temperature):
 
     hourly_data_array_np[current_minute] = current_input_temperature
 
-    plt.plot(hourly_data_array_np, label='Hourly Temperature Data Label')
+    plt.plot(hourly_data_array_np, label='Hourly Temperature Data')
     plt.xlabel('Time - Minutes')
-    plt.title('Hourly Temperature Data Title')
+    plt.title('Last 60 minutes of Temperature Data')
     plt.legend()
     plt.ylim((60,85))
+    # plt.figure(figsize=(6, 3)) # Width and height
 
-    plt.savefig('/var/www/html/temperature_graph.png', dpi=100, bbox_inches='tight')
+    plt.savefig('/var/www/html/temperature_graph.png', dpi=120, bbox_inches='tight')
     plt.close()
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - 
+def save_daily_HVAC_input_into_array(current_input_temperature):
+
+    current_hour = int(datetime.now().hour)
+    current_minute = int(datetime.now().minute)
+    index = 0
+
+    # Calculate the index to the list
+    quotient, remainder = divmod(current_minute, 15)
+    if (remainder == 0):
+        index = 4 * current_hour + quotient
+
+    daily_data_array_np[index] = current_input_temperature
+
+    plt.plot(daily_data_array_np, label='Daily Temperature Data')
+    plt.xlabel('Time - Quarter Hour')
+    plt.title('Daily Temperature Data')
+    plt.legend()
+    plt.ylim((60,85))
+    # plt.figure(figsize=(7, 4)) # Width and height
+
+
+    plt.savefig('/var/www/html/daily_temperature_graph.png', dpi=120, bbox_inches='tight')
+    plt.close()
+
+
+# 0 0    = 0
+# 0 15   = 1
+# 0 30   = 2
+# 0 45   = 3
+# 1 0    = 4   (hr  * 4) +   
+# 1 15   = 5   (hr  * 4) + (min / 15)
+# 1 30   = 6
+# 1 45   = 7
+# 2 0    = 8
 
 
 """
@@ -365,6 +430,7 @@ while (time_to_collect_data):
     rpi_zero_w_1_humidity_str       =  str(rpi_zero_w_1_humidity)
 
     save_HVAC_input_into_array(get_HVAC_input())
+    save_daily_HVAC_input_into_array(get_HVAC_input())
 
     # Files in use
     #  1)  All data files
@@ -428,11 +494,21 @@ while (time_to_collect_data):
 
 
     # Check to see if its time to collect data again
-    time.sleep(10) 
+    # time.sleep(51) 
 
-    TEMP_loop_counter = TEMP_loop_counter + 1
-    if (TEMP_loop_counter > 65):
-        time_to_collect_data = False
+    
+    # Loop here until current minute is differnt than the previous minute
+    current_minute = int(datetime.now().minute)
+    
+    while (current_minute == previous_minute ):
+        time.sleep(2)  # Seconds
+        current_minute = int(datetime.now().minute)
+    
+    previous_minute = current_minute
+
+    # TEMP_loop_counter = TEMP_loop_counter + 1
+    # if (TEMP_loop_counter > 65):
+    #     time_to_collect_data = False
 
 
 #=====================================================
