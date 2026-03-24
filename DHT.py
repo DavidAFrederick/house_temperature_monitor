@@ -5,8 +5,20 @@ import time
 import board
 import adafruit_dht
  
+
+# Setup virtual environment:
+# create a virtual environment using: python -m venv /home/pi/python_code/house_temperature_monitor/venv
+#
+# Activate:
+#  cd to /home/pi/python_code/house_temperature_monitor/venv/bin
+#  Run command:  source ./activate
+# 
+#  Install library using:
+# pip3 install adafruit-circuitpython-dht
+
 # Initial the dht device, with data pin connected to:
-dhtDevice = adafruit_dht.DHT22(board.D24)
+dhtDevice = adafruit_dht.DHT22(board.D2)
+# dhtDevice = adafruit_dht.DHT22(board.D24)
  
 # you can pass DHT22 use_pulseio=False if you wouldn't like to use pulseio.
 # This may be necessary on a Linux single board computer like the Raspberry Pi,
