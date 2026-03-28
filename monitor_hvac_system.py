@@ -4,26 +4,36 @@ import glob
 from datetime import datetime
 import time
 import csv
+import board
+
 
 # https://pimylifeup.com/raspberry-pi-humidity-sensor-dht22/
 # sudo pip3 install --install-option="--force-pi" Adafruit_DHT
+#  ./venv/bin/pip3 install adafruit-circuitpython-dht
 
-import Adafruit_DHT
 
+# import Adafruit_DHT   (OLD - Deprecated)
+import adafruit_dht      ## Revised March 2026
+
+# ./venv/bin/pip3 install pynetworktables
 from networktables import NetworkTables
 import logging  # To see messages from networktables, you must setup logging
 
 # Graphing
+#   ./venv/bin/pip3 install matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+
+# Testing
+# ./venv/bin/python3 monitor_hvac_system.py
 
 #=====================================================
 #==(Initialize CONSTANTS)=============================
 
-HVAC_INPUT   = 3
+HVAC_INPUT   = 0
 HVAC_OUTPUT  = 1
-WATER_HEATER = 2
-HUMIDIFER    = 0
+# WATER_HEATER = 2
+# HUMIDIFER    = 0
 
 # Device 0   Humidifier
 # Device 1   AC Out
@@ -39,8 +49,11 @@ device_file = []
 
 global DTH_humidity
 global DTH_temperature
-DTH_humidity = 0
-DTH_temperature = 0
+DTH_humidity : float = 0
+DTH_temperature : float = 0
+
+DHT_SENSOR = adafruit_dht.DHT22(board.D3)
+
 
 # daily_ac_total_time_running = 0
 ac_run_time_current = 0
@@ -49,7 +62,7 @@ current_hour = 0
 ac_run_time_whole_day_float = 0
 ac_run_time_whole_day_string = "x"
 
-output_filename = '/home/pi/python/BasementTemperatureData2.csv'
+output_filename = '/home/pi/python/BasementTemperatureData2026.csv'
 debug_file_name2 = "/home/pi/python/debug22.txt"
 debug_file_name3 = "/home/pi/python/debug32.txt"
 web_server_page_filename = '/var/www/html/index.html'
@@ -126,6 +139,9 @@ def Initialize_the_one_wire_temperature_sensors():
 
     for sensor in range(number_of_sensors):
         device_file.append(device_folder[sensor] + '/w1_slave')
+        print (f"Sensor found   ")
+    
+    print (f"END OF SENSOR Search")
 
 def read_temp_raw_one_wire_temperature_sensor(deviceFile):
     f = open(deviceFile, 'r')
@@ -149,27 +165,24 @@ def read_temp_one_wire_temperature_sensor(deviceFile):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - 
 def Read_the_DTH_sensor_temperature() -> int:
-    DHT_SENSOR = Adafruit_DHT.DHT22
-    DHT_PIN = 24 
-    DHT_RETRY_TIME = 2
-    
-    DTH_humidity, DTH_temperature = Adafruit_DHT.read_retry(DHT_SENSOR, DHT_PIN, DHT_RETRY_TIME)
+    # DHT_SENSOR = adafruit_dht.DHT22(board.D3)
+
+    DTH_temperature = DHT_SENSOR.temperature   
+    DTH_humidity = DHT_SENSOR.humidity
     if (DTH_humidity == None) or (DTH_temperature == None):
         print ("Error:  DTH no data")
         DTH_humidity = 0
         DTH_temperature = 0
 
-    DTH_humidity = int(DTH_humidity)
+    DTH_humidity = DTH_humidity
     DTH_temperature  = int(DTH_temperature * (9/5) +32)
     return DTH_temperature
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - 
 def Read_the_DTH_sensor_humidity() -> int:
-    DHT_SENSOR = Adafruit_DHT.DHT22
-    DHT_PIN = 24 
-    DHT_RETRY_TIME = 6
-    
-    DTH_humidity, DTH_temperature = Adafruit_DHT.read_retry(DHT_SENSOR, DHT_PIN, DHT_RETRY_TIME)
+    # DHT_SENSOR = adafruit_dht.DHT22(board.D3)  ##### >>> LOOKS LIKE I NEED to rewrite the code to only initialize this object once
+    DTH_temperature = DHT_SENSOR.temperature   
+    DTH_humidity = DHT_SENSOR.humidity
     if (DTH_humidity == None) or (DTH_temperature == None):
         print ("Error:  DTH no data")
         DTH_humidity = 0
@@ -181,16 +194,20 @@ def Read_the_DTH_sensor_humidity() -> int:
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - 
 def get_HVAC_input() -> float:
+    # return 55.0
     return read_temp_one_wire_temperature_sensor(device_file[HVAC_INPUT])
 
 def get_HVAC_output() -> float:
+    # return 56.0
     return read_temp_one_wire_temperature_sensor(device_file[HVAC_OUTPUT])
 
-def get_WaterHeater() -> float:
-    return read_temp_one_wire_temperature_sensor(device_file[WATER_HEATER])
+# def get_WaterHeater() -> float:
+#     return 57.0
+#     return read_temp_one_wire_temperature_sensor(device_file[WATER_HEATER])
 
-def get_Outside() -> float:
-    return read_temp_one_wire_temperature_sensor(device_file[HUMIDIFER])
+# def get_Outside() -> float:
+#     return 58.0
+#     return read_temp_one_wire_temperature_sensor(device_file[HUMIDIFER])
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
@@ -205,8 +222,10 @@ def write_header_line():
 def write_row_of_data_to_CSV():
     with open(output_filename, 'a') as working_file:
         writer = csv.writer(working_file, quoting=csv.QUOTE_ALL)
-        writer.writerow((currenttime, get_Outside(), get_HVAC_output(), get_WaterHeater(), get_HVAC_input(), humidity_str, temperature_str,
+        writer.writerow((currenttime, get_HVAC_output(), get_HVAC_input(), humidity_str, temperature_str,
                          rpi_zero_w_1_humidity_str, rpi_zero_w_1_temperature))
+        # writer.writerow((currenttime, get_Outside(), get_HVAC_output(), get_WaterHeater(), get_HVAC_input(), humidity_str, temperature_str,
+        #                  rpi_zero_w_1_humidity_str, rpi_zero_w_1_temperature))
     open(output_filename).close()
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -298,8 +317,8 @@ def create_web_page (date_time_string, ac_temp_input, ac_temp_output, ac_temp_de
 def print_sensors():
     print (" get_HVAC_input:   ", get_HVAC_input())
     print (" get_HVAC_output: ", get_HVAC_output())
-    print (" get_WaterHeater: ", get_WaterHeater())
-    print (" get_Outside: ", get_Outside())
+    # print (" get_WaterHeater: ", get_WaterHeater())
+    # print (" get_Outside: ", get_Outside())
     print (" Get DHT Temp: ", Read_the_DTH_sensor_temperature())
     print (" Get DHT Humidty: ", Read_the_DTH_sensor_humidity())
 
@@ -401,8 +420,10 @@ Write the graph into the website folder
 #=====================================================
 #==(Main program)=====================================
 get_and_print_current_time()
+
 Initialize_the_one_wire_temperature_sensors()
 print_sensors()
+
 write_header_line()
 
 TEMP_loop_counter = 0
@@ -418,9 +439,9 @@ while (time_to_collect_data):
     # Read the sensors and Reformat data to needed format
     ac_temp_input_str               =  str( get_HVAC_input())
     ac_temp_output_str              =  str( get_HVAC_output())
-    ac_temp_delta_float             =  abs(int(  get_HVAC_output() - get_HVAC_input()   ))  
+    ac_temp_delta_float             =  abs(int(get_HVAC_output() - get_HVAC_input()))  
     ac_temp_delta_str               =  str(ac_temp_delta_float) 
-    water_heater_temp_str           =  str(get_WaterHeater())
+    # water_heater_temp_str           =  str(get_WaterHeater())
     humidity_str                    =  str(Read_the_DTH_sensor_humidity())
     temperature_str                 =  str(Read_the_DTH_sensor_temperature())
 

@@ -1,5 +1,6 @@
 # systemd unit file for the Python Temperature Service
 # DFrederick June 22, 2020
+# DFrederick March 28, 2026
 
 [Unit]
 # Human readable name of the unit
@@ -8,7 +9,7 @@ Description=Python Temperature Service
 
 [Service]
 # Command to execute when the service is started
-ExecStart=sudo /usr/bin/python3 /home/pi/python/monitor_hvac_system.py
+ExecStart=sudo /home/pi/python/venv/bin/python /home/pi/python/house_temperature_monitor/monitor_hvac_system.py
 
 # Disable Python's buffering of STDOUT and STDERR, so that output from the
 # service shows up immediately in systemd's logs
