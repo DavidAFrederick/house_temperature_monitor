@@ -71,8 +71,12 @@ debug_file_name2 = "/home/pi/python/debug22.txt"
 debug_file_name3 = "/home/pi/python/debug32.txt"
 web_server_page_filename = '/var/www/html/index.html'
 
-rpi_zero_w_1_temperature = 0
-rpi_zero_w_1_humidity =    0
+# rpi_zero_w_1_temperature = 0
+# rpi_zero_w_1_humidity =    0
+
+rpi_zero_DHT_humidity    = 0
+rpi_zero_DHT_temperature = 0
+
 date_time_string = " "
 currenttime = datetime.now().replace(microsecond=0)
 current_minute = int(datetime.now().minute)
@@ -121,8 +125,14 @@ daily_data_array_np = np.array(daily_data_list)
 #==(Initialize NetworkTables )========================
 NetworkTables.initialize()
 sd = NetworkTables.getTable("SmartDashboard")
-results = sd.putString ("rpi_zero_w_1_temperature", "3.14159")
-results = sd.putString ("rpi_zero_w_1_humidity", "3.14159")
+results = sd.putString ("rpi_zero_DHT_temperature", "3.14159")
+results = sd.putString ("rpi_zero_DHT_humidity", "3.14159")
+# results = sd.putString ("rpi_zero_w_1_temperature", "3.14159")
+# results = sd.putString ("rpi_zero_w_1_humidity", "3.14159")
+
+rpi_zero_DHT_humidity    = 0
+rpi_zero_DHT_temperature = 0
+
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -250,7 +260,7 @@ def write_row_of_data_to_CSV():
     with open(output_filename, 'a') as working_file:
         writer = csv.writer(working_file, quoting=csv.QUOTE_ALL)
         writer.writerow((currenttime, get_HVAC_output(), get_HVAC_input(), humidity_str, temperature_str,
-                         rpi_zero_w_1_humidity_str, rpi_zero_w_1_temperature))
+                         rpi_zero_DHT_humidity, rpi_zero_DHT_temperature))
         # writer.writerow((currenttime, get_Outside(), get_HVAC_output(), get_WaterHeater(), get_HVAC_input(), humidity_str, temperature_str,
         #                  rpi_zero_w_1_humidity_str, rpi_zero_w_1_temperature))
     open(output_filename).close()
@@ -264,7 +274,7 @@ def write_row_of_data_to_CSV():
 
 
 def create_web_page (date_time_string, ac_temp_input, ac_temp_output, ac_temp_delta, ac_run_time_current,
-              ac_run_time_whole_day, humidity, water_heater_temp, rpi_zero_w_1_humidity, rpi_zero_w_1_temperature):
+              ac_run_time_whole_day, humidity, water_heater_temp, rpi_zero_DHT_humidity, rpi_zero_DHT_temperature):
         
     page_text = [
     '<h1 style="text-align: left;color:rgb(255, 1, 1); "><strong>System Temperatures (Ver: March 28, 2026)</strong></h1> \n',
@@ -325,13 +335,15 @@ def create_web_page (date_time_string, ac_temp_input, ac_temp_output, ac_temp_de
     '<p style="color:rgb(1, 100, 1);"><strong>DHT Humidity:&nbsp;</strong>',humidity,'</p> \n',
     '<p style="color:rgb(1, 100, 1);"><strong>DTH Temperature:</strong>&nbsp;', temperature_str,'</p> \n',
     '<p>&nbsp;</p> \n',
-    '<p style="color:rgb(200, 1, 1);"><strong>RPI_1: Humidity:&nbsp;</strong>',rpi_zero_w_1_humidity,'</p> \n',
-    '<p style="color:rgb(200, 1, 1);"><strong>RPI_1: Temperature </strong>&nbsp;', rpi_zero_w_1_temperature,'</p> \n'
+    '<p style="color:rgb(200, 1, 1);"><strong>RPI_1: Humidity:&nbsp;</strong>',rpi_zero_DHT_humidity_str,'</p> \n',
+    '<p style="color:rgb(200, 1, 1);"><strong>RPI_1: Temperature </strong>&nbsp;', rpi_zero_DHT_temperature_str,'</p> \n'
     '<img src="temperature_graph.png">'
     '<p>&nbsp;</p>\n'
     '<img src="daily_temperature_graph.png">'
     ]
     
+    print (f"= {rpi_zero_DHT_humidity_str}===={rpi_zero_DHT_temperature_str}==============================================")
+
     with open(web_server_page_filename, 'w') as f:
         for line in page_text:
             f.write(line)
@@ -361,9 +373,9 @@ def get_and_print_current_time():
 # - - - - - - - - - - - - - - - - - - - - - - - - - - 
     # Read the remote sensor
 def  read_remote_sensors():
-    rpi_zero_w_1_temperature = float ( sd.getString ("rpi_zero_w_1_temperature", "0"))
-    rpi_zero_w_1_humidity =    float ( sd.getString ("rpi_zero_w_1_humidity", "0" ) )
-    print (f"rpi_zero_w_1_temperature: {rpi_zero_w_1_temperature}   rpi_zero_w_1_humidity: {rpi_zero_w_1_humidity}")
+    rpi_zero_DHT_temperature = float ( sd.getString ("rpi_zero_DHT_temperature", "0"))
+    rpi_zero_DHT_humidity =    float ( sd.getString ("rpi_zero_DHT_humidity", "0" ) )
+    print (f"rpi_zero_DHT_temperature: {rpi_zero_DHT_temperature}   rpi_zero_DHT_humidity: {rpi_zero_DHT_humidity}")
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - 
 def save_HVAC_input_into_array(current_input_temperature):
@@ -466,25 +478,27 @@ while (time_to_collect_data):
 
     time.sleep(10)
 
-    print ("Before Continue")
-    continue 
-    print ("After Continue")
-
-
+    # print ("Before Continue")
+    # continue 
+    # print ("After Continue")
 
     # Read the sensors and Reformat data to needed format
     ac_temp_input_str               =  str( get_HVAC_input())
     ac_temp_output_str              =  str( get_HVAC_output())
     ac_temp_delta_float             =  abs(int(get_HVAC_output() - get_HVAC_input()))  
     ac_temp_delta_str               =  str(ac_temp_delta_float) 
+    water_heater_temp_str           =  "0.0"
     # water_heater_temp_str           =  str(get_WaterHeater())
     humidity_str                    =  str(Read_the_DTH_sensor_humidity())
     temperature_str                 =  str(Read_the_DTH_sensor_temperature())
 
     ac_run_time_current_str         =  str(ac_run_time_current)
     ac_run_time_whole_day_str       =  str(ac_run_time_whole_day_float)
-    rpi_zero_w_1_temperature_str    =  str(rpi_zero_w_1_temperature)
-    rpi_zero_w_1_humidity_str       =  str(rpi_zero_w_1_humidity)
+    # rpi_zero_w_1_temperature_str    =  str(rpi_zero_w_1_temperature)
+    # rpi_zero_w_1_humidity_str       =  str(rpi_zero_w_1_humidity)
+
+    rpi_zero_DHT_temperature_str    =  str(rpi_zero_DHT_temperature)
+    rpi_zero_DHT_humidity_str       =  str(rpi_zero_DHT_humidity)
 
     save_HVAC_input_into_array(get_HVAC_input())
     save_daily_HVAC_input_into_array(get_HVAC_input())
@@ -543,8 +557,8 @@ while (time_to_collect_data):
         ac_run_time_whole_day_str, 
         humidity_str, 
         temperature_str,   #  fix
-        rpi_zero_w_1_humidity_str, 
-        rpi_zero_w_1_temperature_str
+        rpi_zero_DHT_humidity, 
+        rpi_zero_DHT_temperature
     )
     
 
