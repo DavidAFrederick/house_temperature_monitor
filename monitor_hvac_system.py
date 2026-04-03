@@ -11,6 +11,10 @@ import board
 # sudo pip3 install --install-option="--force-pi" Adafruit_DHT
 #  ./venv/bin/pip3 install adafruit-circuitpython-dht
 
+# ./venv/bin/pip3 install rpi.gpio
+# pip3 install libgpiod
+#  gpiodetect
+
 
 # import Adafruit_DHT   (OLD - Deprecated)
 import adafruit_dht      ## Revised March 2026
@@ -167,8 +171,21 @@ def read_temp_one_wire_temperature_sensor(deviceFile):
 def Read_the_DTH_sensor_temperature() -> int:
     # DHT_SENSOR = adafruit_dht.DHT22(board.D3)
 
-    DTH_temperature = DHT_SENSOR.temperature   
-    DTH_humidity = DHT_SENSOR.humidity
+    # DTH_temperature = DHT_SENSOR.temperature   
+    # DTH_humidity = DHT_SENSOR.humidity
+
+    try:
+        DTH_temperature = None  
+        DTH_humidity = None
+        
+        DTH_temperature = DHT_SENSOR.temperature   
+        DTH_humidity = DHT_SENSOR.humidity
+        print(f"Temp: {DTH_temperature}C, Humidity: {DTH_humidity}%")
+
+    except RuntimeError as e:
+        print(e)
+
+
     if (DTH_humidity == None) or (DTH_temperature == None):
         print ("Error:  DTH no data")
         DTH_humidity = 0
@@ -181,8 +198,18 @@ def Read_the_DTH_sensor_temperature() -> int:
 # - - - - - - - - - - - - - - - - - - - - - - - - - - 
 def Read_the_DTH_sensor_humidity() -> int:
     # DHT_SENSOR = adafruit_dht.DHT22(board.D3)  ##### >>> LOOKS LIKE I NEED to rewrite the code to only initialize this object once
-    DTH_temperature = DHT_SENSOR.temperature   
-    DTH_humidity = DHT_SENSOR.humidity
+
+    try:
+        DTH_temperature = None  
+        DTH_humidity = None
+        
+        DTH_temperature = DHT_SENSOR.temperature   
+        DTH_humidity = DHT_SENSOR.humidity
+        print(f"Temp: {DTH_temperature}C, Humidity: {DTH_humidity}%")
+
+    except RuntimeError as e:
+        print(e)
+
     if (DTH_humidity == None) or (DTH_temperature == None):
         print ("Error:  DTH no data")
         DTH_humidity = 0
@@ -240,7 +267,7 @@ def create_web_page (date_time_string, ac_temp_input, ac_temp_output, ac_temp_de
               ac_run_time_whole_day, humidity, water_heater_temp, rpi_zero_w_1_humidity, rpi_zero_w_1_temperature):
         
     page_text = [
-    '<h1 style="text-align: left;color:rgb(255, 1, 1); "><strong>System Temperatures (Ver: March 11, 2025)</strong></h1> \n',
+    '<h1 style="text-align: left;color:rgb(255, 1, 1); "><strong>System Temperatures (Ver: March 28, 2026)</strong></h1> \n',
     '<table style="height: 14px; width: 400px; border-collapse: collapse; float: left;" border="0"> \n',
     '<tbody> \n',
     '<tr style="height: 18px;"> \n',
@@ -336,6 +363,7 @@ def get_and_print_current_time():
 def  read_remote_sensors():
     rpi_zero_w_1_temperature = float ( sd.getString ("rpi_zero_w_1_temperature", "0"))
     rpi_zero_w_1_humidity =    float ( sd.getString ("rpi_zero_w_1_humidity", "0" ) )
+    print (f"rpi_zero_w_1_temperature: {rpi_zero_w_1_temperature}   rpi_zero_w_1_humidity: {rpi_zero_w_1_humidity}")
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - 
 def save_HVAC_input_into_array(current_input_temperature):
@@ -435,6 +463,14 @@ while (time_to_collect_data):
 
     get_and_print_current_time()
     read_remote_sensors()
+
+    time.sleep(10)
+
+    print ("Before Continue")
+    continue 
+    print ("After Continue")
+
+
 
     # Read the sensors and Reformat data to needed format
     ac_temp_input_str               =  str( get_HVAC_input())

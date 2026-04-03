@@ -9,7 +9,7 @@ Description=Python Temperature Service
 
 [Service]
 # Command to execute when the service is started
-ExecStart=sudo /home/pi/python/venv/bin/python /home/pi/python/house_temperature_monitor/monitor_hvac_system.py
+ExecStart=sudo /home/pi/python/house_temperature_monitor/venv/bin/python /home/pi/python/house_temperature_monitor/monitor_hvac_system.py
 
 # Disable Python's buffering of STDOUT and STDERR, so that output from the
 # service shows up immediately in systemd's logs
