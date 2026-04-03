@@ -373,6 +373,8 @@ def get_and_print_current_time():
 # - - - - - - - - - - - - - - - - - - - - - - - - - - 
     # Read the remote sensor
 def  read_remote_sensors():
+    global rpi_zero_DHT_temperature 
+    global rpi_zero_DHT_humidity
     rpi_zero_DHT_temperature = float ( sd.getString ("rpi_zero_DHT_temperature", "0"))
     rpi_zero_DHT_humidity =    float ( sd.getString ("rpi_zero_DHT_humidity", "0" ) )
     print (f"rpi_zero_DHT_temperature: {rpi_zero_DHT_temperature}   rpi_zero_DHT_humidity: {rpi_zero_DHT_humidity}")
@@ -497,8 +499,11 @@ while (time_to_collect_data):
     # rpi_zero_w_1_temperature_str    =  str(rpi_zero_w_1_temperature)
     # rpi_zero_w_1_humidity_str       =  str(rpi_zero_w_1_humidity)
 
+
     rpi_zero_DHT_temperature_str    =  str(rpi_zero_DHT_temperature)
     rpi_zero_DHT_humidity_str       =  str(rpi_zero_DHT_humidity)
+
+    print (f">>> {rpi_zero_DHT_temperature}  {rpi_zero_DHT_temperature_str}  {rpi_zero_DHT_humidity}  {rpi_zero_DHT_humidity_str}")
 
     save_HVAC_input_into_array(get_HVAC_input())
     save_daily_HVAC_input_into_array(get_HVAC_input())
